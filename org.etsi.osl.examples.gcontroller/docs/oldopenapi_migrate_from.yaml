@@ -1,0 +1,2115 @@
+openapi: 3.1.0
+info:
+  contact:
+    email: rdireito@av.it.pt
+    name: Rafael Direito
+  description: ITAv's 5G Slice Management API Mock
+  title: Slice Management API Mock
+  version: 0.0.1
+servers:
+- url: /
+tags:
+- description: Operations related with UEs.
+  name: UE
+- description: Operations related with Network Slices.
+  name: productOrder
+- description: Operations related with IPs allocation for Network Slices.
+  name: OrderIPs
+- description: Clear operations (not present in production Slice Manager).
+  name: clear
+paths:
+  /UE/post:
+    post:
+      description: Create a new UE and associate it with a slice.
+      operationId: create_ue_UE_post_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UE"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                description: Created
+                data:
+                  id: 20
+                  IMSI: 999080100001125
+                  slice: test
+                  operational_state: ENABLED
+                  AMDATA: true
+                  SNSSAI: 1-222222
+                  DNN: test
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: test999080100001125
+                  numIMSIs: 1
+              schema:
+                $ref: "#/components/schemas/RW_UEResponse_"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2 commands failed when creating UEs"
+                data:
+                  id: 20
+                  IMSI: 999080100001125
+                  slice: test
+                  operational_state: ENABLED
+                  AMDATA: true
+                  SNSSAI: 1-222222
+                  DNN: test
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: test999080100001125
+                  numIMSIs: 1
+          description: Additional Response
+        "405":
+          content:
+            application/json:
+              example:
+                description: Not Allowed
+                errors: UE association already exists.
+          description: Method Not Allowed
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Create a new UE and associate it with a slice
+      tags:
+      - UE
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/{slice}/delete_slice:
+    delete:
+      description: Delete all UEs associated with a specific network slice
+      operationId: delete_ues_by_slice_UE__slice__delete_slice_delete
+      parameters:
+      - explode: false
+        in: path
+        name: slice
+        required: true
+        schema:
+          title: Slice
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Deleted
+          headers:
+            description:
+              description: Deleted
+              explode: false
+              schema:
+                nullable: true
+                type: string
+              style: simple
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2 commands failed when deleting UEs"
+          description: Additional Response
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Delete all Network Slice UEs
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/{slice}/get_slice:
+    get:
+      description: Get all UEs associated with a specific network slice
+      operationId: get_ues_by_slice_UE__slice__get_slice_get
+      parameters:
+      - explode: false
+        in: path
+        name: slice
+        required: true
+        schema:
+          title: Slice
+          type: string
+        style: simple
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                - id: 20
+                  IMSI: 999080100001125
+                  slice: test
+                  operational_state: ENABLED
+                  AMDATA: true
+                  SNSSAI: 1-222222
+                  DNN: test
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: test999080100001125
+                  numIMSIs: 1
+              schema:
+                $ref: "#/components/schemas/RW_list_UEResponse__"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get UEs by Slice
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/{imsi}/get_IMSI:
+    get:
+      description: Get UE information by IMSI number
+      operationId: get_ue_by_imsi_UE__imsi__get_IMSI_get
+      parameters:
+      - explode: false
+        in: path
+        name: imsi
+        required: true
+        schema:
+          title: Imsi
+          type: integer
+        style: simple
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                - id: 20
+                  IMSI: 999080100001125
+                  slice: test
+                  operational_state: ENABLED
+                  AMDATA: true
+                  SNSSAI: 1-222222
+                  DNN: test
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: test999080100001125
+                  numIMSIs: 1
+              schema:
+                $ref: "#/components/schemas/RW_list_UEResponse__"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get UE by IMSI
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/{id}/get:
+    get:
+      description: Get UE information by ID
+      operationId: get_ue_by_id_UE__id__get_get
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: integer
+        style: simple
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                  id: 20
+                  IMSI: 999080100001125
+                  slice: test
+                  operational_state: ENABLED
+                  AMDATA: true
+                  SNSSAI: 1-222222
+                  DNN: test
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: test999080100001125
+                  numIMSIs: 1
+              schema:
+                $ref: "#/components/schemas/RW_UEResponse_"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get UE by ID
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/get:
+    get:
+      description: Get all UEs across all network slices
+      operationId: get_all_ues_UE_get_get
+      parameters:
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                - id: 5
+                  IMSI: 999080100001122
+                  slice: huawei.com
+                  operational_state: DISABLED
+                  AMDATA: false
+                  SNSSAI: 1-010101
+                  DNN: huawei.com
+                  DEFAULT: "TRUE"
+                  UEcanSendSNSSAI: "FALSE"
+                  IMSIGroupNAME: huawei.com999080100001122
+                  numIMSIs: 1
+              schema:
+                $ref: "#/components/schemas/RW_list_UEResponse__"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get All UEs
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /UE/{imsi}/delete_IMSI:
+    delete:
+      description: Delete a UE by its IMSI number
+      operationId: delete_ue_by_imsi_UE__imsi__delete_IMSI_delete
+      parameters:
+      - explode: false
+        in: path
+        name: imsi
+        required: true
+        schema:
+          title: Imsi
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Deleted
+          headers:
+            description:
+              description: Deleted
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2 commands failed when deleting UEs"
+          description: Additional Response
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Delete UE by IMSI
+      tags:
+      - UE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: UE
+      - tag: UE
+  /productOrder/post:
+    post:
+      description: Create a new Network Slice Product Order
+      operationId: create_product_order_productOrder_post_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NetworkSliceCreate"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                description: Created
+                data:
+                  description: Success
+                  data:
+                    id: 5GASPHigh
+                    name: 5gasp
+                    DNN: 5gasp.eu
+                    administrative_state: AdministrativeState.UNLOCKED
+                    operational_state: OperationalState.ENABLED
+                    sst: "1"
+                    sd: "222222"
+                    dllatency: "20"
+                    ullatency: "20"
+                    dlguathptperue: "20000.0"
+                    ulguathptperue: "20000.0"
+                    dlmaxthptperue: "50000.0"
+                    ulmaxthptperue: "50000.0"
+                    delaytolerance: DelayTolerance.NOT_SUPPORTED
+                    reliability: "99.9"
+                    dldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                    uldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                    coverage_area:
+                      IT: Coverage Area Description
+                    n6protections:
+                    - type: PCC Rule
+                      name: rule_any
+                    kpis: []
+              schema:
+                $ref: "#/components/schemas/RW_ProductOrder_"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+              schema:
+                $ref: "#/components/schemas/RWDetail"
+          description: Unauthorized
+        "476":
+          content:
+            application/json:
+              example:
+                description: The maximum number of slices created was reached.
+                data: Slice number reached the limit.
+              schema:
+                $ref: "#/components/schemas/RWStr"
+          description: Additional Response
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2"
+                data:
+                  coverage_area:
+                  - IT
+                  operational_state: OperationalState.ENABLED
+                  administrative_state: AdministrativeState.UNLOCKED
+                  sst: "1"
+                  sd: "222222"
+                  prioritylabel: "100"
+                  dllatency: "20"
+                  ullatency: "20"
+                  dlguathptperue: "20000.0"
+                  ulguathptperue: "20000.0"
+                  dlmaxthptperue: "50000.0"
+                  ulmaxthptperue: "50000.0"
+                  delaytolerance: DelayTolerance.NOT_SUPPORTED
+                  reliability: "99.9"
+                  dldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  uldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  n6protection:
+                  - type: PCC Rule
+                    name: rule_any
+                  dnn: test.eu
+                  name: fail_475_0
+                  id: test_slice_0
+              schema:
+                $ref: "#/components/schemas/RW_NetworkSliceCreate_"
+          description: Additional Response
+        "405":
+          content:
+            application/json:
+              example:
+                description: Operation not allowed
+                errors: NetworkSlice ID already exists.
+              schema:
+                $ref: "#/components/schemas/REW"
+          description: Method Not Allowed
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception string
+              schema:
+                $ref: "#/components/schemas/REW"
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Create a new Network Slice Product Order
+      tags:
+      - productOrder
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: productOrder
+      - tag: productOrder
+  /productOrder/get:
+    get:
+      description: Get all Network Slice Product Orders (CSMF Get Products)
+      operationId: get_product_orders_productOrder_get_get
+      parameters:
+      - description: Comma-separated list of fields to return
+        explode: true
+        in: query
+        name: fields
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: form
+      - description: Number of items to skip
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          nullable: true
+          type: integer
+        style: form
+      - description: Maximum number of items to return
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          nullable: true
+          type: integer
+        style: form
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                - id: test_slice_1
+                  name: test1
+                  DNN: test1.eu
+                  administrative_state: AdministrativeState.UNLOCKED
+                  operational_state: OperationalState.ENABLED
+                  sst: "1"
+                  sd: "222221"
+                  dllatency: "20"
+                  ullatency: "20"
+                  dlguathptperue: "20000.0"
+                  ulguathptperue: "20000.0"
+                  dlmaxthptperue: "50000.0"
+                  ulmaxthptperue: "50000.0"
+                  delaytolerance: DelayTolerance.NOT_SUPPORTED
+                  reliability: "99.9"
+                  dldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  uldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  coverage_area:
+                    IT: Coverage Area Description
+                  n6protections:
+                  - type: PCC Rule
+                    name: rule_any
+                  kpis: []
+              schema:
+                $ref: "#/components/schemas/RW_List_ProductOrder__"
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get Network Slices
+      tags:
+      - productOrder
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: productOrder
+      - tag: productOrder
+  /productOrder/{id}/get:
+    get:
+      description: Get a specific Network Slice Product Order by ID (CSMF Get Product
+        by ID)
+      operationId: get_product_order_by_id_productOrder__id__get_get
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: string
+        style: simple
+      - description: Comma-separated list of fields to return
+        explode: true
+        in: query
+        name: fields
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: form
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                  id: test_slice
+                  name: test
+                  DNN: test.eu
+                  administrative_state: AdministrativeState.UNLOCKED
+                  operational_state: OperationalState.ENABLED
+                  sst: "1"
+                  sd: "222222"
+                  dllatency: "20"
+                  ullatency: "20"
+                  dlguathptperue: "20000.0"
+                  ulguathptperue: "20000.0"
+                  dlmaxthptperue: "50000.0"
+                  ulmaxthptperue: "50000.0"
+                  delaytolerance: DelayTolerance.NOT_SUPPORTED
+                  reliability: "99.9"
+                  dldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  uldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  coverage_area:
+                    IT: Coverage Area Description
+                    PDA: Coverage Area Description
+                  n6protections:
+                  - type: PCC Rule
+                    name: rule_any
+                  kpis: []
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get Network Slice By ID
+      tags:
+      - productOrder
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: productOrder
+      - tag: productOrder
+  /productOrder/{id}/patch:
+    patch:
+      description: Update an existing Network Slice Product Order (CSMF Patch Product)
+      operationId: patch_product_order_productOrder__id__patch_patch
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NetworkSliceCreate"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Updated
+                data:
+                  id: test_update
+                  name: test_updated
+                  DNN: test.eu
+                  administrative_state: AdministrativeState.UNLOCKED
+                  operational_state: OperationalState.ENABLED
+                  sst: "1"
+                  sd: "222222"
+                  dllatency: "25"
+                  ullatency: "25"
+                  dlguathptperue: "30000.0"
+                  ulguathptperue: "30000.0"
+                  dlmaxthptperue: "60000.0"
+                  ulmaxthptperue: "60000.0"
+                  delaytolerance: DelayTolerance.NOT_SUPPORTED
+                  reliability: "99.5"
+                  dldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  uldeterministiccomm: DeterministicCommAvailability.NOT_SUPPORTED
+                  coverage_area:
+                    IT: Coverage Area Description
+                    PDA: Coverage Area Description
+                  n6protections:
+                  - type: PCC Rule
+                    name: rule_any
+                  kpis: []
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2 commands failed during ProductOrder update"
+              schema:
+                $ref: "#/components/schemas/RWDescription"
+          description: Additional Response
+        "405":
+          content:
+            application/json:
+              example:
+                description: Operation not allowed
+                errors: This sst and sd combination cannot be used outside of standard
+                  slice.
+          description: Method Not Allowed
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+                errors: NetworkSlice ID does not exists in ProductOrders
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Patch Network Slice
+      tags:
+      - productOrder
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: productOrder
+      - tag: productOrder
+  /productOrder/{id}/delete:
+    delete:
+      description: Delete a Network Slice Product Order
+      operationId: delete_product_order_productOrder__id__delete_delete
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: string
+        style: simple
+      responses:
+        "204":
+          description: Deleted
+          headers:
+            description:
+              description: Deleted
+              explode: false
+              schema:
+                type: string
+              style: simple
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "475":
+          content:
+            application/json:
+              example:
+                description: "c1, c2 commands failed during Product order deletion"
+          description: Additional Response
+        "405":
+          content:
+            application/json:
+              example:
+                description: Operation not allowed
+                errors: Standard slice cannot be deleted.
+          description: Method Not Allowed
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+                errors: NetworkSlice does not exists
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Delete Network Slice
+      tags:
+      - productOrder
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: productOrder
+      - tag: productOrder
+  /OrderIPs/{id}/get:
+    get:
+      description: Get the IP address pool for a specific Network Slice
+      operationId: get_slice_ip_pool_OrderIPs__id__get_get
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: string
+        style: simple
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data: 10.16.9.37-10.16.9.54
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              example:
+                description: Not Found
+          description: Not Found
+        "400":
+          content:
+            application/json:
+              example:
+                description: Bad request
+                errors: Exception String
+          description: Bad Request
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Get Network Slice IP Pool
+      tags:
+      - OrderIPs
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: OrderIPs
+      - tag: OrderIPs
+  /clear/all:
+    post:
+      description: Clear all network slices and UEs data
+      operationId: clear_all_clear_all_post
+      parameters:
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                  message: All data has been cleared.
+                  slices_cleared: 2
+                  ues_cleared: 2
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Clear All Data
+      tags:
+      - clear
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: clear
+      - tag: clear
+  /clear/ue:
+    post:
+      description: Clear all UEs associated with network slices
+      operationId: clear_ue_clear_ue_post
+      parameters:
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                  message: All UEs have been cleared.
+                  ues_cleared: 2
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Clear Network Slice UEs Data
+      tags:
+      - clear
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: clear
+      - tag: clear
+  /clear/slice:
+    post:
+      description: Clear all network slices data
+      operationId: clear_slice_clear_slice_post
+      parameters:
+      - explode: false
+        in: header
+        name: authorization
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                description: Success
+                data:
+                  message: All network slices have been cleared.
+                  slices_cleared: 2
+              schema: {}
+          description: Successful Response
+        "401":
+          content:
+            application/json:
+              example:
+                detail: Invalid authentication credentials
+          description: Unauthorized
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - HTTPBasic: []
+      summary: Clear Network Slices Data
+      tags:
+      - clear
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: clear
+      - tag: clear
+components:
+  schemas:
+    AdministrativeState:
+      enum:
+      - LOCKED
+      - UNLOCKED
+      - SHUTTINGDOWN
+      title: AdministrativeState
+      type: string
+    CustomBoolean:
+      enum:
+      - "TRUE"
+      - "FALSE"
+      title: CustomBoolean
+      type: string
+    DelayTolerance:
+      enum:
+      - SUPPORTED
+      - NOT_SUPPORTED
+      title: DelayTolerance
+      type: string
+    DeterministicCommAvailability:
+      enum:
+      - SUPPORTED
+      - NOT_SUPPORTED
+      title: DeterministicCommAvailability
+      type: string
+    HTTPValidationError:
+      example:
+        detail:
+        - msg: msg
+          loc:
+          - Location_inner
+          - Location_inner
+          type: type
+        - msg: msg
+          loc:
+          - Location_inner
+          - Location_inner
+          type: type
+      properties:
+        detail:
+          items:
+            $ref: "#/components/schemas/ValidationError"
+          title: Detail
+          type: array
+      title: HTTPValidationError
+    N6Protection:
+      example:
+        name: name
+        type: type
+      properties:
+        type:
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+      title: N6Protection
+    NetworkSliceCreate:
+      example:
+        ulguathptperue: 7.061401241503109
+        coverage_area:
+        - coverage_area
+        - coverage_area
+        nroperatingbands: nroperatingbands
+        synchronicityaccuracy: 6.438423552598547
+        uemobilitylevel: ""
+        n6protection:
+        - name: name
+          type: type
+        - name: name
+          type: type
+        prioritylabel: 6
+        dllatency: 5
+        activityfactor: 5.025004791520295
+        reliability: 1.4658129805029452
+        positioningtype: ""
+        dldeterministiccomm: SUPPORTED
+        dlmaxthptperslice: 1.0246457001441578
+        sd: sd
+        positioningfrequency: ""
+        sst: 0
+        dlguathptperue: 2.3021358869347655
+        uldeterministiccomm: null
+        ulmaxpktsize: 7
+        slicesimultaneoususe: ""
+        dlguathptperslice: 7.386281948385884
+        maxnumberofpdusessions: 1
+        id: id
+        delaytolerance: SUPPORTED
+        positioningaccuracy: 9.018348186070783
+        nssaasupport: ""
+        ulguathptperslice: 1.2315135367772556
+        dnn: dnn
+        synchronicitysupport: ""
+        uespeed: 9
+        maxnumberofues: 4
+        dldeterminperiodicity: 9
+        survivaltime: 8.762042012749001
+        ulmaxthptperue: 3.616076749251911
+        resourcesharinglevel: ""
+        dlmaxpktsize: 6
+        name: name
+        uldeterminperiodicity: 6
+        administrative_state: LOCKED
+        ullatency: 5
+        ulmaxthptperslice: 1.4894159098541704
+        plmnid: 2
+        energyefficiency: ""
+        operational_state: ENABLED
+        termdensity: 4
+        dlmaxthptperue: 9.301444243932576
+      properties:
+        name:
+          title: Name
+          type: string
+        administrative_state:
+          $ref: "#/components/schemas/AdministrativeState"
+        operational_state:
+          $ref: "#/components/schemas/OperationalState"
+        coverage_area:
+          items:
+            type: string
+          title: Coverage Area
+          type: array
+        sst:
+          title: Sst
+          type: integer
+        sd:
+          title: Sd
+          type: string
+        dnn:
+          title: Dnn
+          type: string
+        prioritylabel:
+          title: Prioritylabel
+          type: integer
+        reliability:
+          title: Reliability
+          type: number
+        dllatency:
+          title: Dllatency
+          type: integer
+        ullatency:
+          title: Ullatency
+          type: integer
+        delaytolerance:
+          $ref: "#/components/schemas/DelayTolerance"
+        dldeterministiccomm:
+          $ref: "#/components/schemas/DeterministicCommAvailability"
+        uldeterministiccomm:
+          $ref: "#/components/schemas/DeterministicCommAvailability"
+        dlguathptperue:
+          title: Dlguathptperue
+          type: number
+        ulguathptperue:
+          title: Ulguathptperue
+          type: number
+        dlmaxthptperue:
+          title: Dlmaxthptperue
+          type: number
+        ulmaxthptperue:
+          title: Ulmaxthptperue
+          type: number
+        plmnid:
+          nullable: true
+          type: integer
+        maxnumberofues:
+          nullable: true
+          type: integer
+        dlguathptperslice:
+          nullable: true
+          type: number
+        ulguathptperslice:
+          nullable: true
+          type: number
+        dlmaxthptperslice:
+          nullable: true
+          type: number
+        ulmaxthptperslice:
+          nullable: true
+          type: number
+        dlmaxpktsize:
+          nullable: true
+          type: integer
+        ulmaxpktsize:
+          nullable: true
+          type: integer
+        maxnumberofpdusessions:
+          nullable: true
+          type: integer
+        nroperatingbands:
+          nullable: true
+          type: string
+        slicesimultaneoususe:
+          allOf:
+          - $ref: "#/components/schemas/sliceuse"
+          nullable: true
+        energyefficiency:
+          allOf:
+          - $ref: "#/components/schemas/energyKPI"
+          nullable: true
+        termdensity:
+          nullable: true
+          type: integer
+        activityfactor:
+          nullable: true
+          type: number
+        resourcesharinglevel:
+          allOf:
+          - $ref: "#/components/schemas/sharing"
+          nullable: true
+        uemobilitylevel:
+          allOf:
+          - $ref: "#/components/schemas/uEmobilityLevel"
+          nullable: true
+        uespeed:
+          nullable: true
+          type: integer
+        dldeterminperiodicity:
+          nullable: true
+          type: integer
+        uldeterminperiodicity:
+          nullable: true
+          type: integer
+        survivaltime:
+          nullable: true
+          type: number
+        positioningtype:
+          allOf:
+          - $ref: "#/components/schemas/positioning"
+          nullable: true
+        positioningfrequency:
+          allOf:
+          - $ref: "#/components/schemas/positioningfreq"
+          nullable: true
+        positioningaccuracy:
+          nullable: true
+          type: number
+        synchronicitysupport:
+          allOf:
+          - $ref: "#/components/schemas/synchonicity"
+          nullable: true
+        synchronicityaccuracy:
+          nullable: true
+          type: number
+        nssaasupport:
+          allOf:
+          - $ref: "#/components/schemas/nssaa"
+          nullable: true
+        n6protection:
+          items:
+            $ref: "#/components/schemas/N6Protection"
+          nullable: true
+          type: array
+        id:
+          title: Id
+          type: string
+      required:
+      - administrative_state
+      - coverage_area
+      - delaytolerance
+      - dldeterministiccomm
+      - dlguathptperue
+      - dllatency
+      - dlmaxthptperue
+      - dnn
+      - id
+      - name
+      - operational_state
+      - prioritylabel
+      - reliability
+      - sd
+      - sst
+      - uldeterministiccomm
+      - ulguathptperue
+      - ullatency
+      - ulmaxthptperue
+      title: NetworkSliceCreate
+    OperationalState:
+      enum:
+      - ENABLED
+      - DISABLED
+      title: OperationalState
+      type: string
+    ProductOrder:
+      example:
+        ulguathptperue: ulguathptperue
+        coverage_area:
+          key: coverage_area
+        DNN: DNN
+        dllatency: dllatency
+        reliability: reliability
+        n6protections:
+        - name: name
+          type: type
+        - name: name
+          type: type
+        dldeterministiccomm: dldeterministiccomm
+        sd: sd
+        sst: sst
+        dlguathptperue: dlguathptperue
+        ulmaxthptperue: ulmaxthptperue
+        uldeterministiccomm: uldeterministiccomm
+        name: name
+        administrative_state: administrative_state
+        ullatency: ullatency
+        id: id
+        operational_state: operational_state
+        dlmaxthptperue: dlmaxthptperue
+        delaytolerance: delaytolerance
+        kpis:
+        - kpis
+        - kpis
+      properties:
+        id:
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+        DNN:
+          nullable: true
+          type: string
+        administrative_state:
+          nullable: true
+          type: string
+        operational_state:
+          nullable: true
+          type: string
+        sst:
+          nullable: true
+          type: string
+        sd:
+          nullable: true
+          type: string
+        dllatency:
+          nullable: true
+          type: string
+        ullatency:
+          nullable: true
+          type: string
+        dlguathptperue:
+          nullable: true
+          type: string
+        ulguathptperue:
+          nullable: true
+          type: string
+        dlmaxthptperue:
+          nullable: true
+          type: string
+        ulmaxthptperue:
+          nullable: true
+          type: string
+        delaytolerance:
+          nullable: true
+          type: string
+        reliability:
+          nullable: true
+          type: string
+        dldeterministiccomm:
+          nullable: true
+          type: string
+        uldeterministiccomm:
+          nullable: true
+          type: string
+        coverage_area:
+          additionalProperties:
+            type: string
+          nullable: true
+        n6protections:
+          items:
+            $ref: "#/components/schemas/N6Protection"
+          nullable: true
+          type: array
+        kpis:
+          items:
+            type: string
+          nullable: true
+          type: array
+      title: ProductOrder
+    REW:
+      example:
+        description: description
+        errors: errors
+      properties:
+        description:
+          title: Description
+          type: string
+        errors:
+          title: Errors
+          type: string
+      required:
+      - description
+      - errors
+      title: REW
+    RWDescription:
+      example:
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+      required:
+      - description
+      title: RWDescription
+    RWDetail:
+      example:
+        detail: detail
+      properties:
+        detail:
+          title: Detail
+          type: string
+      required:
+      - detail
+      title: RWDetail
+    RWStr:
+      example:
+        data: data
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          title: Data
+          type: string
+      required:
+      - data
+      - description
+      title: RWStr
+    RW_List_ProductOrder__:
+      example:
+        data:
+        - ulguathptperue: ulguathptperue
+          coverage_area:
+            key: coverage_area
+          DNN: DNN
+          dllatency: dllatency
+          reliability: reliability
+          n6protections:
+          - name: name
+            type: type
+          - name: name
+            type: type
+          dldeterministiccomm: dldeterministiccomm
+          sd: sd
+          sst: sst
+          dlguathptperue: dlguathptperue
+          ulmaxthptperue: ulmaxthptperue
+          uldeterministiccomm: uldeterministiccomm
+          name: name
+          administrative_state: administrative_state
+          ullatency: ullatency
+          id: id
+          operational_state: operational_state
+          dlmaxthptperue: dlmaxthptperue
+          delaytolerance: delaytolerance
+          kpis:
+          - kpis
+          - kpis
+        - ulguathptperue: ulguathptperue
+          coverage_area:
+            key: coverage_area
+          DNN: DNN
+          dllatency: dllatency
+          reliability: reliability
+          n6protections:
+          - name: name
+            type: type
+          - name: name
+            type: type
+          dldeterministiccomm: dldeterministiccomm
+          sd: sd
+          sst: sst
+          dlguathptperue: dlguathptperue
+          ulmaxthptperue: ulmaxthptperue
+          uldeterministiccomm: uldeterministiccomm
+          name: name
+          administrative_state: administrative_state
+          ullatency: ullatency
+          id: id
+          operational_state: operational_state
+          dlmaxthptperue: dlmaxthptperue
+          delaytolerance: delaytolerance
+          kpis:
+          - kpis
+          - kpis
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          items:
+            $ref: "#/components/schemas/ProductOrder"
+          title: Data
+          type: array
+      required:
+      - data
+      - description
+      title: "RW[List[ProductOrder]]"
+    RW_NetworkSliceCreate_:
+      example:
+        data:
+          ulguathptperue: 7.061401241503109
+          coverage_area:
+          - coverage_area
+          - coverage_area
+          nroperatingbands: nroperatingbands
+          synchronicityaccuracy: 6.438423552598547
+          uemobilitylevel: ""
+          n6protection:
+          - name: name
+            type: type
+          - name: name
+            type: type
+          prioritylabel: 6
+          dllatency: 5
+          activityfactor: 5.025004791520295
+          reliability: 1.4658129805029452
+          positioningtype: ""
+          dldeterministiccomm: SUPPORTED
+          dlmaxthptperslice: 1.0246457001441578
+          sd: sd
+          positioningfrequency: ""
+          sst: 0
+          dlguathptperue: 2.3021358869347655
+          uldeterministiccomm: null
+          ulmaxpktsize: 7
+          slicesimultaneoususe: ""
+          dlguathptperslice: 7.386281948385884
+          maxnumberofpdusessions: 1
+          id: id
+          delaytolerance: SUPPORTED
+          positioningaccuracy: 9.018348186070783
+          nssaasupport: ""
+          ulguathptperslice: 1.2315135367772556
+          dnn: dnn
+          synchronicitysupport: ""
+          uespeed: 9
+          maxnumberofues: 4
+          dldeterminperiodicity: 9
+          survivaltime: 8.762042012749001
+          ulmaxthptperue: 3.616076749251911
+          resourcesharinglevel: ""
+          dlmaxpktsize: 6
+          name: name
+          uldeterminperiodicity: 6
+          administrative_state: LOCKED
+          ullatency: 5
+          ulmaxthptperslice: 1.4894159098541704
+          plmnid: 2
+          energyefficiency: ""
+          operational_state: ENABLED
+          termdensity: 4
+          dlmaxthptperue: 9.301444243932576
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          $ref: "#/components/schemas/NetworkSliceCreate"
+      required:
+      - data
+      - description
+      title: "RW[NetworkSliceCreate]"
+    RW_ProductOrder_:
+      example:
+        data:
+          ulguathptperue: ulguathptperue
+          coverage_area:
+            key: coverage_area
+          DNN: DNN
+          dllatency: dllatency
+          reliability: reliability
+          n6protections:
+          - name: name
+            type: type
+          - name: name
+            type: type
+          dldeterministiccomm: dldeterministiccomm
+          sd: sd
+          sst: sst
+          dlguathptperue: dlguathptperue
+          ulmaxthptperue: ulmaxthptperue
+          uldeterministiccomm: uldeterministiccomm
+          name: name
+          administrative_state: administrative_state
+          ullatency: ullatency
+          id: id
+          operational_state: operational_state
+          dlmaxthptperue: dlmaxthptperue
+          delaytolerance: delaytolerance
+          kpis:
+          - kpis
+          - kpis
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          $ref: "#/components/schemas/ProductOrder"
+      required:
+      - data
+      - description
+      title: "RW[ProductOrder]"
+    RW_UEResponse_:
+      example:
+        data:
+          numIMSIs: 1
+          AMDATA: true
+          slice: slice
+          DNN: DNN
+          SNSSAI: SNSSAI
+          IMSI: 6
+          id: 0
+          operational_state: ""
+          IMSIGroupNAME: IMSIGroupNAME
+          DEFAULT: ""
+          UEcanSendSNSSAI: ""
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          $ref: "#/components/schemas/UEResponse"
+      required:
+      - data
+      - description
+      title: "RW[UEResponse]"
+    RW_list_UEResponse__:
+      example:
+        data:
+        - numIMSIs: 1
+          AMDATA: true
+          slice: slice
+          DNN: DNN
+          SNSSAI: SNSSAI
+          IMSI: 6
+          id: 0
+          operational_state: ""
+          IMSIGroupNAME: IMSIGroupNAME
+          DEFAULT: ""
+          UEcanSendSNSSAI: ""
+        - numIMSIs: 1
+          AMDATA: true
+          slice: slice
+          DNN: DNN
+          SNSSAI: SNSSAI
+          IMSI: 6
+          id: 0
+          operational_state: ""
+          IMSIGroupNAME: IMSIGroupNAME
+          DEFAULT: ""
+          UEcanSendSNSSAI: ""
+        description: description
+      properties:
+        description:
+          title: Description
+          type: string
+        data:
+          items:
+            $ref: "#/components/schemas/UEResponse"
+          title: Data
+          type: array
+      required:
+      - data
+      - description
+      title: "RW[list[UEResponse]]"
+    UE:
+      example:
+        numIMSIs: 6
+        AMBRUP: 1
+        AMDATA: true
+        slice: slice
+        IPV6: IPV6
+        IPV4: IPV4
+        IMSI: 0
+        AMBRDW: 5
+        DEFAULT: DEFAULT
+        UEcanSendSNSSAI: UEcanSendSNSSAI
+      properties:
+        IMSI:
+          format: int64
+          title: Imsi
+          type: integer
+        numIMSIs:
+          title: Numimsis
+          type: integer
+        slice:
+          title: Slice
+          type: string
+        IPV4:
+          title: Ipv4
+          type: string
+        IPV6:
+          title: Ipv6
+          type: string
+        AMDATA:
+          title: Amdata
+          type: boolean
+        DEFAULT:
+          title: Default
+          type: string
+        UEcanSendSNSSAI:
+          title: Uecansendsnssai
+          type: string
+        AMBRUP:
+          nullable: true
+          type: integer
+        AMBRDW:
+          nullable: true
+          type: integer
+      required:
+      - AMDATA
+      - DEFAULT
+      - IMSI
+      - IPV4
+      - IPV6
+      - UEcanSendSNSSAI
+      - numIMSIs
+      - slice
+      title: UE
+    UEResponse:
+      example:
+        numIMSIs: 1
+        AMDATA: true
+        slice: slice
+        DNN: DNN
+        SNSSAI: SNSSAI
+        IMSI: 6
+        id: 0
+        operational_state: ""
+        IMSIGroupNAME: IMSIGroupNAME
+        DEFAULT: ""
+        UEcanSendSNSSAI: ""
+      properties:
+        id:
+          title: Id
+          type: integer
+        IMSI:
+          title: Imsi
+          type: integer
+        slice:
+          title: Slice
+          type: string
+        operational_state:
+          allOf:
+          - $ref: "#/components/schemas/OperationalState"
+          nullable: true
+        AMDATA:
+          nullable: true
+          type: boolean
+        SNSSAI:
+          nullable: true
+          type: string
+        DNN:
+          nullable: true
+          type: string
+        DEFAULT:
+          allOf:
+          - $ref: "#/components/schemas/CustomBoolean"
+          nullable: true
+        UEcanSendSNSSAI:
+          allOf:
+          - $ref: "#/components/schemas/CustomBoolean"
+          nullable: true
+        IMSIGroupNAME:
+          nullable: true
+          type: string
+        numIMSIs:
+          nullable: true
+          type: integer
+      required:
+      - IMSI
+      - id
+      - slice
+      title: UEResponse
+    ValidationError:
+      example:
+        msg: msg
+        loc:
+        - Location_inner
+        - Location_inner
+        type: type
+      properties:
+        loc:
+          items:
+            $ref: "#/components/schemas/Location_inner"
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    energyKPI:
+      enum:
+      - eMBBEEPerfReq
+      - uRLLCEEPerfReq
+      - mIoTEEPerfReq
+      title: energyKPI
+      type: string
+    nssaa:
+      enum:
+      - SUPPORTED
+      - NOT_SUPPORTED
+      title: nssaa
+      type: string
+    positioning:
+      enum:
+      - CIDE_CID
+      - OTDOA
+      - RF_fingerprint
+      - AECID
+      - Hybrid_positioning
+      - NET_RTK
+      title: positioning
+      type: string
+    positioningfreq:
+      enum:
+      - PERSEC
+      - PERMIN
+      - PERHOUR
+      title: positioningfreq
+      type: string
+    sharing:
+      enum:
+      - shared
+      - non_shared
+      title: sharing
+      type: string
+    sliceuse:
+      enum:
+      - "0"
+      - "1"
+      - "2"
+      - "3"
+      - "4"
+      title: sliceuse
+      type: string
+    synchonicity:
+      enum:
+      - NOT_SUPPORTED
+      - BETWEEN_BS_AND_UE
+      - BETWEEN_BS_AND_UE_&_UE_AND_UE
+      title: synchonicity
+      type: string
+    uEmobilityLevel:
+      enum:
+      - stationary
+      - nomadic
+      - restricted_mobility
+      - fully_mobility
+      title: uEmobilityLevel
+      type: string
+    Location_inner:
+      anyOf:
+      - type: string
+      - type: integer
+  securitySchemes:
+    HTTPBasic:
+      scheme: basic
+      type: http

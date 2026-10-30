@@ -1,0 +1,2165 @@
+openapi: 3.0.3
+info:
+  description: API for 5G resource and network slice management.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Slice Manager API
+  version: 0.1.0
+servers:
+- description: prod-lite
+  url: http://10.16.10.78:8000
+- description: dev-0
+  url: http://10.16.255.51:8000
+- description: dev-1
+  url: http://10.16.255.50:8000
+security:
+- capif_bearer: []
+tags:
+- description: RAN operations targeting Huawei BBUs.
+  name: RAN
+- description: Core network operations targeting Huawei network resources.
+  name: CORE
+- description: Asynchronous operation tracking.
+  name: OPS
+paths:
+  /ran/bbus/{bbu_id}/cells/{cell_id}:
+    get:
+      description: Retrieves the current status and transmission properties of a single
+        cell.
+      operationId: get_cell
+      parameters:
+      - description: BBU identifier.
+        explode: false
+        in: path
+        name: bbu_id
+        required: true
+        schema:
+          description: Supported BBU identifiers.
+          enum:
+          - bbu-99903
+          - bbu-99904
+          - it
+          - aveiro-seaport
+          type: string
+        style: simple
+      - description: Cell identifier within a BBU.
+        explode: false
+        in: path
+        name: cell_id
+        required: true
+        schema:
+          description: Numeric cell identifier.
+          example: 151
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                cell:
+                  nr_cell_id: 151
+                  frequency_band: n78
+                  duplex_mode: TDD
+                  user_label: muttley
+                  activation_state: Activated
+                  max_transmit_power: 242
+              schema:
+                $ref: "#/components/schemas/CellStatusResponse"
+          description: Cell retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: BBU or cell not found.
+        "503":
+          content:
+            application/json:
+              example:
+                detail: "RAN 'aveiro-seaport' is not managed by this process. Managed\
+                  \ RANs: bbu-99903, bbu-99904, it"
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: RAN session unavailable or not managed by this deployment.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get one cell in a BBU
+      tags:
+      - RAN
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: RAN
+    patch:
+      description: |
+        Updates one or more mutable fields for a single cell.
+
+        Use this endpoint to change the cell `operation`, cell `properties`,
+        or both in the same request.
+      operationId: update_cell
+      parameters:
+      - description: BBU identifier.
+        explode: false
+        in: path
+        name: bbu_id
+        required: true
+        schema:
+          description: Supported BBU identifiers.
+          enum:
+          - bbu-99903
+          - bbu-99904
+          - it
+          - aveiro-seaport
+          type: string
+        style: simple
+      - description: Cell identifier within a BBU.
+        explode: false
+        in: path
+        name: cell_id
+        required: true
+        schema:
+          description: Numeric cell identifier.
+          example: 151
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              activateOnly:
+                description: Activate the cell without changing MIMO or transmit power.
+                summary: Activate a single cell only
+                value:
+                  operation: activate
+              updatePropertiesOnly:
+                description: Change mutable cell settings without activating or deactivating
+                  the cell.
+                summary: Update single-cell properties only
+                value:
+                  properties:
+                    mimo: true
+                    max_transmit_power: 70
+              activateAndUpdateProperties:
+                description: Activate the cell and update mutable settings in one
+                  request.
+                summary: Activate and update single-cell properties
+                value:
+                  operation: activate
+                  properties:
+                    mimo: true
+                    max_transmit_power: 70
+            schema:
+              $ref: "#/components/schemas/CellUpdateRequest"
+        description: |
+          **Note:** you can send **only** `operation` when you want to activate
+          or deactivate a cell without changing its `properties`.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationResultResponse"
+          description: Cell updated successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid cell update request.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: BBU or cell not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Update one cell in a BBU
+      tags:
+      - RAN
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: RAN
+  /ran/bbus/{bbu_id}/cells:
+    get:
+      description: Retrieves the current status and transmission properties for all
+        cells in a BBU.
+      operationId: list_cells
+      parameters:
+      - description: BBU identifier.
+        explode: false
+        in: path
+        name: bbu_id
+        required: true
+        schema:
+          description: Supported BBU identifiers.
+          enum:
+          - bbu-99903
+          - bbu-99904
+          - it
+          - aveiro-seaport
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                cells:
+                - nr_cell_id: 151
+                  frequency_band: n78
+                  duplex_mode: TDD
+                  user_label: muttley
+                  activation_state: Activated
+                  max_transmit_power: 242
+                - nr_cell_id: 152
+                  frequency_band: n78
+                  duplex_mode: TDD
+                  user_label: muttley
+                  activation_state: Deactivated
+                  max_transmit_power: 70
+              schema:
+                $ref: "#/components/schemas/CellStatusListResponse"
+          description: Cells retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: BBU not found.
+        "503":
+          content:
+            application/json:
+              example:
+                detail: "RAN 'aveiro-seaport' is not managed by this process. Managed\
+                  \ RANs: bbu-99903, bbu-99904, it"
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: RAN session unavailable or not managed by this deployment.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: List cells in a BBU
+      tags:
+      - RAN
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: RAN
+    patch:
+      description: |
+        Updates one or more mutable fields across multiple cells in a BBU.
+
+        Use this endpoint to apply the same `operation`, `properties`, or both
+        to every cell listed in `cell_ids`.
+      operationId: update_cells
+      parameters:
+      - description: BBU identifier.
+        explode: false
+        in: path
+        name: bbu_id
+        required: true
+        schema:
+          description: Supported BBU identifiers.
+          enum:
+          - bbu-99903
+          - bbu-99904
+          - it
+          - aveiro-seaport
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              activateOnly:
+                description: Activate cells without changing MIMO or transmit power.
+                summary: Activate a list of cells only
+                value:
+                  cell_ids:
+                  - 151
+                  - 152
+                  - 153
+                  operation: activate
+              updatePropertiesOnly:
+                description: Change mutable cell settings without activating or deactivating
+                  the cells.
+                summary: Update cell-list properties only
+                value:
+                  cell_ids:
+                  - 151
+                  - 152
+                  - 153
+                  properties:
+                    mimo: true
+                    max_transmit_power: 70
+              activateAndUpdateProperties:
+                description: Activate the cells and update mutable settings in one
+                  request.
+                summary: Activate and update properties of a list of cells
+                value:
+                  cell_ids:
+                  - 151
+                  - 152
+                  - 153
+                  operation: activate
+                  properties:
+                    mimo: true
+                    max_transmit_power: 70
+            schema:
+              $ref: "#/components/schemas/CellBulkUpdateRequest"
+        description: |
+          **Note:** you can send **only** `operation` when you want to activate
+          or deactivate cells without changing their `properties`.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationResultResponse"
+          description: Cells updated successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Invalid bulk cell update request.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: BBU or one or more cells not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Update multiple cells in a BBU
+      tags:
+      - RAN
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: RAN
+  /ran/bbus:
+    get:
+      operationId: list_bbus
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                bbus:
+                - bbu_id: bbu-99904
+                  location: muttley
+                  plmn_id: "99904"
+                  ip_address: 10.255.0.1
+                  status: Available
+                - bbu_id: bbu-99903
+                  location: penelope
+                  plmn_id: "99903"
+                  ip_address: 10.255.0.1
+                  status: Available
+                - bbu_id: aveiro-seaport
+                  location: aveiro-seaport
+                  plmn_id: "99908"
+                  status: Unavailable
+              schema:
+                $ref: "#/components/schemas/BbuListResponse"
+          description: BBUs listed successfully.
+      summary: List available BBUs
+      tags:
+      - RAN
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: RAN
+  /core/slices:
+    get:
+      description: |
+        Lists slice profiles discovered from core network state.
+
+        Multiple slices may share the same `dnn` and `snssai` while using
+        different `slice_id` values. In that case, each `slice_id` selects a
+        different **DNN QoS template**.
+      operationId: list_slices
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SliceListResponse"
+          description: Slices retrieved successfully.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: List network slices in the core network
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+    post:
+      description: |
+        Creates a new slice resource in the core network.
+
+        A `Slice` is identified by the **combination** of `dnn`, `snssai`,
+        and `slice_id`.
+
+        Creating a `Slice` also creates the matching **DNN QoS template** in
+        UDM, which the UE uses for connectivity.
+
+        Multiple `slice_id` values can share the same `dnn` and `snssai`.
+        This enables UE slice movement by changing the selected QoS profile
+        without changing the UE's service context.
+      operationId: create_slice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Slice"
+        description: |
+          Creates a `Slice` resource that aggregates configuration across core
+          network components.
+
+          The `Slice` identity is the **combination** of `dnn`, `snssai`,
+          and `slice_id`.
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationStatusResponse"
+          description: |
+            Asynchronous network operation accepted.
+
+            Use the returned `request_id` with `GET /operations/{request_id}` to
+            follow progress until the operation reaches a terminal state.
+          headers:
+            Location:
+              description: Relative URL for polling asynchronous operation status.
+              explode: false
+              schema:
+                example: /operations/00000000-0000-0000-0000-000000000000
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Bad slice creation request.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Create a new network slice in the core network
+      tags:
+      - CORE
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /core/slices/{slice_id}:
+    delete:
+      description: |
+        Deletes the slice profile selected by `slice_id`.
+
+        The operation is asynchronous. Use the returned `request_id` with
+        `GET /operations/{request_id}` to follow progress.
+      operationId: delete_slice
+      parameters:
+      - description: Slice identifier matching `Slice.slice_id`.
+        explode: false
+        in: path
+        name: slice_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationStatusResponse"
+          description: |
+            Asynchronous network operation accepted.
+
+            Use the returned `request_id` with `GET /operations/{request_id}` to
+            follow progress until the operation reaches a terminal state.
+          headers:
+            Location:
+              description: Relative URL for polling asynchronous operation status.
+              explode: false
+              schema:
+                example: /operations/00000000-0000-0000-0000-000000000000
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Slice not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Delete a network slice in the core network
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+    get:
+      description: |
+        Retrieves the slice profile selected by `slice_id`.
+
+        The response includes the Slice Manager representation of that slice
+        profile.
+      operationId: get_slice
+      parameters:
+      - description: Slice identifier matching `Slice.slice_id`.
+        explode: false
+        in: path
+        name: slice_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SliceResponse"
+          description: Slice retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Slice not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get a network slice in the core network
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /core/ues/{ue_id}/slice-associations:
+    get:
+      description: |
+        Lists slice associations for a UE.
+
+        When `dnn` and `snssai` are provided, the result is limited to that
+        DNN/S-NSSAI service context.
+
+        A UE can have multiple **DNN QoS templates** available under the same
+        `dnn` and `snssai`. Each `slice_id` selects one of those templates,
+        allowing the UE to move between QoS profiles without changing service
+        context.
+      operationId: list_ue_slice_associations
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      - description: Optional `dnn` filter for UE slice associations.
+        explode: true
+        in: query
+        name: dnn
+        required: false
+        schema:
+          minLength: 3
+          type: string
+        style: form
+      - description: Optional `snssai` filter for UE slice associations.
+        explode: true
+        in: query
+        name: snssai
+        required: false
+        schema:
+          pattern: "^[0-9]{1,3}-[0-9]{6}$"
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UeSliceAssociationListResponse"
+          description: UE slice associations retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: List UE slice associations
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+    patch:
+      description: |
+        Moves a UE's current slice association to another **DNN QoS template**.
+
+        The target template is selected by `dnn`, `snssai`, and `slice_id`.
+
+        The server resolves the UE's current association within the same
+        DNN/S-NSSAI service context. If either the current association or the
+        target template is ambiguous, the request fails with `409 Conflict`.
+      operationId: move_ue_slice_association
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UeSliceAssociationUpdateRequest"
+        description: Target slice profile for the move.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UeSliceAssociationResponse"
+          description: UE slice association moved successfully.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Bad UE slice move request.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE or target slice profile not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Ambiguous current UE association or UDM DNN QoS template state.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Move a UE to another network slice profile
+      tags:
+      - CORE
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+    post:
+      description: |
+        Associates a UE with an existing slice profile.
+
+        The `dnn`, `snssai`, and `slice_id` fields select the **DNN QoS
+        template** that UDM should associate with the UE.
+      operationId: create_ue_slice_association
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UeSliceAssociationCreateRequest"
+        description: |
+          A UE can be assigned to multiple `slice_id` values when they belong
+          to the same `dnn` and `snssai` service context.
+
+          A `static_ipv4_address` can also be assigned to the UE.
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationStatusResponse"
+          description: |
+            Asynchronous network operation accepted.
+
+            Use the returned `request_id` with `GET /operations/{request_id}` to
+            follow progress until the operation reaches a terminal state.
+          headers:
+            Location:
+              description: Relative URL for polling asynchronous operation status.
+              explode: false
+              schema:
+                example: /operations/00000000-0000-0000-0000-000000000000
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Bad UE slice association request.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE or slice profile not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Ambiguous or conflicting UDM DNN QoS template state.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Associate a UE with a network slice profile
+      tags:
+      - CORE
+      x-content-type: application/json
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /core/ues/{ue_id}/slice-associations/{slice_id}:
+    delete:
+      description: |
+        Removes the UE association selected by `slice_id`.
+
+        If more than one **DNN QoS template** is associated with the same
+        `dnn` and `snssai`, the UE is automatically moved to the remaining QoS
+        template for that service context.
+      operationId: delete_ue_slice_association
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      - description: Slice identifier matching `Slice.slice_id`.
+        explode: false
+        in: path
+        name: slice_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationStatusResponse"
+          description: |
+            Asynchronous network operation accepted.
+
+            Use the returned `request_id` with `GET /operations/{request_id}` to
+            follow progress until the operation reaches a terminal state.
+          headers:
+            Location:
+              description: Relative URL for polling asynchronous operation status.
+              explode: false
+              schema:
+                example: /operations/00000000-0000-0000-0000-000000000000
+                type: string
+              style: simple
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE or slice association not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Ambiguous UE association or UDM DNN QoS template state.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Remove a UE association from a network slice profile
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+    get:
+      description: |
+        Retrieves the UE association selected by `slice_id`.
+
+        The response includes the resolved UDM **DNN QoS template** identity.
+      operationId: get_ue_slice_association
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      - description: Slice identifier matching `Slice.slice_id`.
+        explode: false
+        in: path
+        name: slice_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UeSliceAssociationResponse"
+          description: UE slice association retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE or slice association not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Ambiguous UE association or UDM DNN QoS template state.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get one UE slice association
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /core/ues/{ue_id}/control-info:
+    get:
+      description: |
+        Retrieves the UE NG mobility-management context from the AMF:
+        registration state, GUTI / 5G-mTMSI, allowed NSSAI, and the serving
+        NR Cell ID.
+      operationId: get_ue_control_info
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UeControlInfoResponse"
+          description: UE control information retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: UE context not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get UE control information
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /core/ues/{ue_id}/user-plane-info:
+    get:
+      description: |
+        Retrieves the UE PDU session from the SMF: DNN, 5QI, ARP, S-NSSAI,
+        session AMBR, PDU type, SSC mode, and UE IP.
+
+        By default the UE is selected by `ue_id` (IMSI). Provide `ip` to look
+        up the session by UE IPv4 address instead. Set `detailed=true` for the
+        full PDU session view.
+      operationId: get_ue_user_plane_info
+      parameters:
+      - description: "UE identifier. Currently, this is an IMSI encoded as exactly\
+          \ 15 decimal digits."
+        explode: false
+        in: path
+        name: ue_id
+        required: true
+        schema:
+          $ref: "#/components/schemas/Imsi"
+        style: simple
+      - description: Return the detailed PDU session view (DSPINFOTYPE=DETAILED).
+        explode: true
+        in: query
+        name: detailed
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      - description: Look up the PDU session by UE IPv4 address instead of IMSI.
+        explode: true
+        in: query
+        name: ip
+        required: false
+        schema:
+          format: ipv4
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UePduSessionResponse"
+          description: UE user-plane information retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: No PDU session found for the UE.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get UE user-plane information
+      tags:
+      - CORE
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: CORE
+  /operations/{request_id}:
+    get:
+      description: |
+        Retrieves the current state of an asynchronous operation started by a
+        previous write request.
+
+        Poll this endpoint with the `request_id` returned by the original
+        operation until the state is terminal.
+      operationId: get_operation_status
+      parameters:
+      - description: Identifier returned by an asynchronous write operation.
+        explode: false
+        in: path
+        name: request_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationStatusResponse"
+          description: Operation status retrieved successfully.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Operation request not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Internal server error.
+      summary: Get asynchronous operation status
+      tags:
+      - OPS
+      x-accepts:
+      - application/json
+      x-tags:
+      - tag: OPS
+components:
+  parameters:
+    BbuId:
+      description: BBU identifier.
+      explode: false
+      in: path
+      name: bbu_id
+      required: true
+      schema:
+        description: Supported BBU identifiers.
+        enum:
+        - bbu-99903
+        - bbu-99904
+        - it
+        - aveiro-seaport
+        type: string
+      style: simple
+    CellId:
+      description: Cell identifier within a BBU.
+      explode: false
+      in: path
+      name: cell_id
+      required: true
+      schema:
+        description: Numeric cell identifier.
+        example: 151
+        type: integer
+      style: simple
+    RequestId:
+      description: Identifier returned by an asynchronous write operation.
+      explode: false
+      in: path
+      name: request_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+      style: simple
+    SliceId:
+      description: Slice identifier matching `Slice.slice_id`.
+      explode: false
+      in: path
+      name: slice_id
+      required: true
+      schema:
+        type: string
+      style: simple
+    UeId:
+      description: "UE identifier. Currently, this is an IMSI encoded as exactly 15\
+        \ decimal digits."
+      explode: false
+      in: path
+      name: ue_id
+      required: true
+      schema:
+        $ref: "#/components/schemas/Imsi"
+      style: simple
+    DnnQuery:
+      description: Optional `dnn` filter for UE slice associations.
+      explode: true
+      in: query
+      name: dnn
+      required: false
+      schema:
+        minLength: 3
+        type: string
+      style: form
+    SnssaiQuery:
+      description: Optional `snssai` filter for UE slice associations.
+      explode: true
+      in: query
+      name: snssai
+      required: false
+      schema:
+        pattern: "^[0-9]{1,3}-[0-9]{6}$"
+        type: string
+      style: form
+  responses:
+    AcceptedOperation:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationStatusResponse"
+      description: |
+        Asynchronous network operation accepted.
+
+        Use the returned `request_id` with `GET /operations/{request_id}` to
+        follow progress until the operation reaches a terminal state.
+      headers:
+        Location:
+          description: Relative URL for polling asynchronous operation status.
+          explode: false
+          schema:
+            example: /operations/00000000-0000-0000-0000-000000000000
+            type: string
+          style: simple
+  schemas:
+    ErrorResponse:
+      additionalProperties: false
+      description: |
+        Standard FastAPI HTTPException error response returned when a request
+        cannot be completed.
+
+        Clients should use the HTTP status code for control flow. The `detail`
+        field provides a human-readable explanation suitable for logs,
+        dashboards, and troubleshooting.
+      example:
+        detail: NOT_FOUND
+      properties:
+        detail:
+          description: Human-readable error message.
+          example: NOT_FOUND
+          type: string
+      required:
+      - detail
+      type: object
+    OperationStatusResponse:
+      additionalProperties: false
+      description: |
+        Status returned for an asynchronous core operation.
+
+        Core write operations return a `request_id`.
+
+        Clients can use that UUID with `GET /operations/{request_id}`
+        to follow progress until the state becomes `completed` or `failed`.
+      example:
+        request_id: a65b1aee-6ca5-41a8-9f50-d313649750c1
+        state: completed
+        operation: create_slice
+        created_at: 2026-08-20T10:00:00Z
+        updated_at: 2026-08-20T10:00:42.310Z
+        duration_ms: 42310
+        components:
+          core:
+            state: completed
+            started_at: 2026-08-20T10:00:00.180Z
+            finished_at: 2026-08-20T10:00:12.223Z
+            duration_ms: 12043
+          ran:
+            state: completed
+            started_at: 2026-08-20T10:00:12.400Z
+            finished_at: 2026-08-20T10:00:42.310Z
+            duration_ms: 29910
+      properties:
+        request_id:
+          description: Identifier of the asynchronous operation request.
+          format: uuid
+          type: string
+        state:
+          description: Current operation state.
+          enum:
+          - pending
+          - published
+          - processing
+          - completed
+          - failed
+          type: string
+        operation:
+          description: Operation that was requested.
+          example: create_slice
+          type: string
+        created_at:
+          description: When the API received the request.
+          format: date-time
+          type: string
+        updated_at:
+          description: When the operation last changed state.
+          format: date-time
+          type: string
+        duration_ms:
+          description: |
+            Elapsed time in milliseconds, measured from the moment the API
+            received the request.
+
+            For the terminal states `completed` and `failed` this is the total
+            end-to-end time, including configuration of every network element.
+            While the operation is still in flight it is the time elapsed so
+            far, so it grows between polls.
+          type: integer
+        components:
+          additionalProperties:
+            $ref: "#/components/schemas/OperationComponentStatus"
+          description: |
+            Per-worker breakdown of the operation, keyed by component name
+            (`core` for UDM/UDG/SMF/AMF, `ran` for the gNB).
+
+            The overall `state` aggregates these: `failed` if any component
+            failed, `completed` only once every component completed.
+          type: object
+      required:
+      - request_id
+      - state
+      type: object
+    OperationComponentStatus:
+      additionalProperties: false
+      description: |
+        Outcome of a single worker's share of an asynchronous operation.
+      properties:
+        state:
+          description: Current state of this component's work.
+          enum:
+          - pending
+          - processing
+          - completed
+          - failed
+          type: string
+        started_at:
+          description: When the worker picked the operation up.
+          format: date-time
+          type: string
+        finished_at:
+          description: When the worker finished applying its commands.
+          format: date-time
+          type: string
+        duration_ms:
+          description: "Time this component spent applying its commands, in milliseconds."
+          type: integer
+        error:
+          description: "Failure reason, present only when `state` is `failed`."
+          type: string
+      required:
+      - state
+      type: object
+    OperationResultResponse:
+      additionalProperties: false
+      description: |
+        Immediate result returned by synchronous RAN write operations.
+
+        RAN operations target a single device and are treated as completed once
+        the device accepts and applies the requested command.
+      example:
+        state: Updated the cell(s)
+      properties:
+        state:
+          description: Final synchronous operation state1
+          type: string
+      required:
+      - state
+      type: object
+    Imsi:
+      description: IMSI encoded as exactly 15 decimal digits.
+      example: "999080100001134"
+      maxLength: 15
+      minLength: 15
+      pattern: "^[0-9]{15}$"
+      type: string
+    CellProperties:
+      additionalProperties: false
+      description: Mutable transmission properties for a cell.
+      example:
+        mimo: true
+        max_transmit_power: 242
+      minProperties: 1
+      properties:
+        mimo:
+          description: Whether MIMO is enabled for the cell.
+          type: boolean
+        max_transmit_power:
+          description: Maximum transmit power for the cell.
+          maximum: 242
+          minimum: 70
+          type: integer
+      type: object
+    CellStatus:
+      additionalProperties: false
+      description: Current status and transmission properties for a cell.
+      example:
+        nr_cell_id: 151
+        frequency_band: n78
+        duplex_mode: TDD
+        user_label: muttley
+        activation_state: Activated
+        max_transmit_power: 242
+      properties:
+        nr_cell_id:
+          type: integer
+        frequency_band:
+          type: string
+        duplex_mode:
+          type: string
+        user_label:
+          type: string
+        activation_state:
+          enum:
+          - Activated
+          - Deactivated
+          type: string
+        max_transmit_power:
+          type: integer
+      required:
+      - activation_state
+      - duplex_mode
+      - frequency_band
+      - max_transmit_power
+      - nr_cell_id
+      - user_label
+      type: object
+    Bbu:
+      additionalProperties: false
+      description: Baseband unit inventory entry.
+      properties:
+        bbu_id:
+          enum:
+          - bbu-99903
+          - bbu-99904
+          - it
+          - aveiro-seaport
+          type: string
+        location:
+          enum:
+          - penelope
+          - muttley
+          - it
+          - aveiro-seaport
+          type: string
+        plmn_id:
+          description: "Public Land Mobile Network identifier for the BBU, encoded\
+            \ as MCC+MNC."
+          pattern: "^[0-9]{5,6}$"
+          type: string
+        ip_address:
+          description: IPv4 address of this baseband unit.
+          type: string
+        status:
+          enum:
+          - Available
+          - Unavailable
+          type: string
+      required:
+      - bbu_id
+      - plmn_id
+      type: object
+    SliceN6ProtectionRule:
+      additionalProperties: false
+      description: |
+        N6 protection rule applied to traffic leaving the core network toward
+        the data network.
+
+        Use this object to describe firewall-style pass/block behavior and
+        optional QoS rate limits for a server, port range, and protocol.
+      example:
+        type: firewall
+        name: allow-video-ingest
+        priority: 1
+        server_ip: 10.16.9.10
+        mask_len: 32
+        start_port: 443
+        end_port: 443
+        uplink_guaranteed_bitrate_kbps: 10000
+        downlink_guaranteed_bitrate_kbps: 50000
+        uplink_maximum_bitrate_kbps: 20000
+        downlink_maximum_bitrate_kbps: 100000
+        protocol: tcp
+        pass_block: pass
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        priority:
+          type: integer
+        server_ip:
+          type: string
+        mask_len:
+          type: integer
+        start_port:
+          type: integer
+        end_port:
+          type: integer
+        uplink_guaranteed_bitrate_kbps:
+          description: "Uplink guaranteed bit rate, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_guaranteed_bitrate_kbps:
+          description: "Downlink guaranteed bit rate, in kbps."
+          type: integer
+          x-unit: kbps
+        uplink_maximum_bitrate_kbps:
+          description: "Uplink maximum bit rate, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_maximum_bitrate_kbps:
+          description: "Downlink maximum bit rate, in kbps."
+          type: integer
+          x-unit: kbps
+        protocol:
+          type: string
+        pass_block:
+          type: string
+      type: object
+    Slice:
+      additionalProperties: false
+      description: |
+        Slice Manager representation of a network slice profile.
+
+        The `dnn` and `snssai` fields define the UE service context. The
+        `slice_id` field selects the specific **DNN QoS template** inside that
+        context.
+
+        Latency field names include the `ms` unit. Bitrate field names include
+        the `kbps` unit.
+
+        Together, `dnn`, `snssai`, and `slice_id` identify the slice profile.
+      example:
+        slice_id: embb-slice
+        coverage_area:
+        - it
+        sst: 1
+        sd: "020202"
+        dnn: embb
+        priority_label: 1
+        ue_mobility_level: nomadic
+        reliability: 99.9
+        downlink_latency_ms: 15
+        uplink_latency_ms: 15
+        downlink_guaranteed_bitrate_per_ue_kbps: 1000
+        uplink_guaranteed_bitrate_per_ue_kbps: 1000
+        downlink_maximum_bitrate_per_ue_kbps: 20000
+        uplink_maximum_bitrate_per_ue_kbps: 20000
+      properties:
+        slice_id:
+          description: Slice identifier and QoS profile selector.
+          minLength: 3
+          type: string
+        coverage_area:
+          description: What RAN this slice will be accessed on. Needs a `bbu_id`.
+          items:
+            enum:
+            - bbu-99903
+            - bbu-99904
+            - it
+            - aveiro-seaport
+            type: string
+          type: array
+        sst:
+          maximum: 255
+          minimum: 0
+          type: integer
+        sd:
+          pattern: "^[0-9]{6}$"
+          type: string
+        dnn:
+          minLength: 3
+          type: string
+        priority_label:
+          maximum: 100
+          minimum: 0
+          type: integer
+        ue_mobility_level:
+          enum:
+          - stationary
+          - nomadic
+          - restricted_mobility
+          - fully_mobility
+          type: string
+        reliability:
+          maximum: 100
+          minimum: 0
+          type: number
+        uplink_max_packet_size_bytes:
+          description: "Maximum uplink packet size, in bytes."
+          type: integer
+          x-unit: bytes
+        downlink_max_packet_size_bytes:
+          description: "Maximum downlink packet size, in bytes."
+          type: integer
+          x-unit: bytes
+        scheduling_type:
+          enum:
+          - BASIC_SCH
+          - HIGH_RELIABILITY_SCH
+          - LOW_LATENCY_SCH
+          type: string
+        downlink_min_resource_block_ratio:
+          description: Minimum downlink resource block ratio.
+          type: integer
+        downlink_max_resource_block_ratio:
+          description: Maximum downlink resource block ratio.
+          type: integer
+        uplink_min_resource_block_ratio:
+          description: Minimum uplink resource block ratio.
+          type: integer
+        uplink_max_resource_block_ratio:
+          description: Maximum uplink resource block ratio.
+          type: integer
+        downlink_latency_ms:
+          description: "Downlink latency budget, in milliseconds."
+          type: integer
+          x-unit: ms
+        uplink_latency_ms:
+          description: "Uplink latency budget, in milliseconds."
+          type: integer
+          x-unit: ms
+        delay_tolerance:
+          enum:
+          - SUPPORTED
+          - NOT_SUPPORTED
+          type: string
+        downlink_deterministic_communication:
+          enum:
+          - SUPPORTED
+          - NOT_SUPPORTED
+          type: string
+        downlink_deterministic_periodicity:
+          type: integer
+        uplink_deterministic_communication:
+          enum:
+          - SUPPORTED
+          - NOT_SUPPORTED
+          type: string
+        uplink_deterministic_periodicity:
+          type: integer
+        downlink_guaranteed_bitrate_per_ue_kbps:
+          description: "Downlink guaranteed bitrate per UE, in kbps."
+          type: integer
+          x-unit: kbps
+        uplink_guaranteed_bitrate_per_ue_kbps:
+          description: "Uplink guaranteed bitrate per UE, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_maximum_bitrate_per_ue_kbps:
+          description: "Downlink maximum bitrate per UE, in kbps."
+          type: integer
+          x-unit: kbps
+        uplink_maximum_bitrate_per_ue_kbps:
+          description: "Uplink maximum bitrate per UE, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_guaranteed_bitrate_per_slice_kbps:
+          description: "Downlink guaranteed bitrate per slice, in kbps."
+          type: integer
+          x-unit: kbps
+        uplink_guaranteed_bitrate_per_slice_kbps:
+          description: "Uplink guaranteed bitrate per slice, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_maximum_bitrate_per_slice_kbps:
+          description: "Downlink maximum bitrate per slice, in kbps."
+          type: integer
+          x-unit: kbps
+        uplink_maximum_bitrate_per_slice_kbps:
+          description: "Uplink maximum bitrate per slice, in kbps."
+          type: integer
+          x-unit: kbps
+        terminal_density:
+          type: integer
+        max_number_of_pdu_sessions:
+          type: integer
+        max_number_of_ues:
+          type: integer
+        n6_protection:
+          items:
+            $ref: "#/components/schemas/SliceN6ProtectionRule"
+          type: array
+      required:
+      - dnn
+      - sd
+      - slice_id
+      - sst
+      type: object
+    SliceResponse:
+      additionalProperties: false
+      description: Response envelope containing one `Slice`.
+      example:
+        slice:
+          slice_id: embb-slice
+          sst: 1
+          sd: "020202"
+          dnn: embb
+      properties:
+        slice:
+          $ref: "#/components/schemas/Slice"
+      required:
+      - slice
+      type: object
+    SliceListResponse:
+      additionalProperties: false
+      description: |
+        Response envelope containing multiple `Slice` entries.
+
+        A response may include several slices with the same `dnn` and `snssai`
+        and different `slice_id` values. Each `slice_id` selects a different
+        **DNN QoS template**.
+      example:
+        slices:
+        - slice_id: embb-slice-high
+          sst: 1
+          sd: "020202"
+          dnn: embb
+        - slice_id: embb-slice-low
+          sst: 1
+          sd: "020202"
+          dnn: embb
+        - slice_id: urllc-slice
+          sst: 2
+          sd: "030303"
+          dnn: urllc
+      properties:
+        slices:
+          items:
+            $ref: "#/components/schemas/Slice"
+          type: array
+      required:
+      - slices
+      type: object
+    UeSliceAssociationCreateRequest:
+      additionalProperties: false
+      description: |
+        Client request for associating a UE with a slice profile.
+
+        The `dnn`, `snssai`, and `slice_id` fields select the UDM **DNN QoS
+        template** to assign to the UE.
+      example:
+        slice_id: embb-slice
+        snssai: 1-020202
+        dnn: embb
+        static_ipv4_address: 10.16.9.5
+        access_mobility_data: true
+        uplink_aggregate_maximum_bitrate_kbps: 1000
+        downlink_aggregate_maximum_bitrate_kbps: 3000
+      properties:
+        dnn:
+          description: '`dnn` value used to select the UDM **DNN QoS template**.'
+          minLength: 3
+          type: string
+        snssai:
+          description: '`snssai` value used to select the UDM **DNN QoS template**.'
+          pattern: "^[0-9]{1,3}-[0-9]{6}$"
+          type: string
+        slice_id:
+          description: Slice identifier and QoS profile selector matching `Slice.slice_id`.
+          minLength: 3
+          type: string
+        static_ipv4_address:
+          description: Static IPv4 address assigned to the UE.
+          example: 10.16.9.5
+          pattern: "^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$"
+          type: string
+        access_mobility_data:
+          description: Whether to create or update UDM Access and Mobility data for
+            the UE.
+          type: boolean
+        snssai_advertisement_allowed:
+          description: Whether the UE is allowed to receive the configured `snssai`.
+          type: boolean
+        uplink_aggregate_maximum_bitrate_kbps:
+          description: "Uplink aggregate maximum bitrate for the UE, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_aggregate_maximum_bitrate_kbps:
+          description: "Downlink aggregate maximum bitrate for the UE, in kbps."
+          type: integer
+          x-unit: kbps
+      required:
+      - dnn
+      - slice_id
+      - snssai
+      type: object
+    UeSliceAssociationUpdateRequest:
+      additionalProperties: false
+      description: |
+        Fields used to modify a UE slice association.
+
+        The `dnn`, `snssai`, and `slice_id` fields select the target **DNN QoS
+        template** for the UE.
+      example:
+        dnn: embb
+        snssai: 1-020202
+        slice_id: embb-slice-low
+      properties:
+        dnn:
+          description: Target DNN.
+          minLength: 3
+          type: string
+        snssai:
+          description: Target S-NSSAI.
+          pattern: "^[0-9]{1,3}-[0-9]{6}$"
+          type: string
+        slice_id:
+          description: Target slice identifier and QoS profile selector.
+          minLength: 3
+          type: string
+      required:
+      - dnn
+      - slice_id
+      - snssai
+      type: object
+    UeSliceAssociation:
+      additionalProperties: false
+      description: |
+        Observed UE slice association.
+
+        The association records the selected `dnn`, `snssai`, and `slice_id`
+        values, plus the resolved UDM **DNN QoS template** identity when
+        available.
+      example:
+        ue_id: "268010123456789"
+        dnn: embb
+        snssai: 1-020202
+        slice_id: embb-slice
+        dnn_qos_template_id: 1000
+        dnn_qos_template_name: embb_1-020202_embb-slice
+        static_ipv4_address: 10.16.9.5
+        access_mobility_data: true
+        snssai_advertisement_allowed: false
+        uplink_aggregate_maximum_bitrate_kbps: 1000
+        downlink_aggregate_maximum_bitrate_kbps: 1000
+      properties:
+        ue_id:
+          description: IMSI encoded as exactly 15 decimal digits.
+          example: "999080100001134"
+          maxLength: 15
+          minLength: 15
+          pattern: "^[0-9]{15}$"
+          type: string
+        dnn:
+          description: DNN associated with the UE.
+          minLength: 3
+          type: string
+        snssai:
+          description: S-NSSAI associated with the UE.
+          pattern: "^[0-9]{1,3}-[0-9]{6}$"
+          type: string
+        slice_id:
+          description: Slice identifier and QoS profile selector matching `Slice.slice_id`.
+          minLength: 3
+          type: string
+        dnn_qos_template_id:
+          description: Numeric UDM **DNN QoS template** identifier resolved from UDM
+            state.
+          type: integer
+        dnn_qos_template_name:
+          description: UDM **DNN QoS template** name resolved from UDM state.
+          type: string
+        static_ipv4_address:
+          description: Static IPv4 address assigned to the UE.
+          type: string
+        access_mobility_data:
+          description: Whether UDM Access and Mobility data is configured for the
+            UE.
+          type: boolean
+        snssai_advertisement_allowed:
+          description: Whether the UE is allowed to receive the configured `snssai`.
+          type: boolean
+        uplink_aggregate_maximum_bitrate_kbps:
+          description: "Uplink aggregate maximum bitrate for the UE, in kbps."
+          type: integer
+          x-unit: kbps
+        downlink_aggregate_maximum_bitrate_kbps:
+          description: "Downlink aggregate maximum bitrate for the UE, in kbps."
+          type: integer
+          x-unit: kbps
+      required:
+      - dnn
+      - slice_id
+      - snssai
+      - ue_id
+      type: object
+    UeSliceAssociationResponse:
+      additionalProperties: false
+      description: |
+        Response envelope containing one UE slice association.
+      example:
+        association:
+          ue_id: "268010123456789"
+          dnn: embb
+          snssai: 1-020202
+          slice_id: embb-slice
+          dnn_qos_template_id: 1000
+          dnn_qos_template_name: embb_1-020202_embb-slice
+      properties:
+        association:
+          $ref: "#/components/schemas/UeSliceAssociation"
+      required:
+      - association
+      type: object
+    UeSliceAssociationListResponse:
+      additionalProperties: false
+      description: |
+        Response envelope containing all slice associations available to a UE.
+      example:
+        associations:
+        - ue_id: "268010123456789"
+          dnn: embb
+          snssai: 1-020202
+          slice_id: embb-slice-high
+          dnn_qos_template_id: 1000
+          dnn_qos_template_name: embb_1-020202_embb-slice-high
+        - ue_id: "268010123456789"
+          dnn: embb
+          snssai: 1-020202
+          slice_id: embb-slice-low
+          dnn_qos_template_id: 1001
+          dnn_qos_template_name: embb_1-020202_embb-slice-low
+      properties:
+        associations:
+          items:
+            $ref: "#/components/schemas/UeSliceAssociation"
+          type: array
+      required:
+      - associations
+      type: object
+    UeControlInfo:
+      additionalProperties: false
+      description: |
+        UE NG mobility-management context, read from the AMF via `DSP NGMMCTX`.
+      example:
+        guti: 990800000410000a1
+        five_g_m_tmsi: 168558753
+        state: REGISTERED
+        nssai: 1-333333
+        nr_cell_id: 52
+      properties:
+        guti:
+          description: Globally Unique Temporary Identifier assigned to the UE.
+          type: string
+        five_g_m_tmsi:
+          description: "5G-mTMSI, decoded from the trailing bytes of the GUTI."
+          format: int64
+          type: integer
+        property:
+          type: string
+        mm_status:
+          description: Mobility-management status.
+          type: string
+        state:
+          description: Registration / connection state.
+          type: string
+        nssai:
+          description: Allowed NSSAI for the UE.
+          type: string
+        nr_cell_id:
+          description: "Serving NR Cell ID, decoded from the trailing bytes."
+          type: integer
+      type: object
+    UeControlInfoResponse:
+      additionalProperties: false
+      description: Response envelope containing one `UeControlInfo`.
+      example:
+        control_info:
+          guti: 990800000410000a1
+          five_g_m_tmsi: 168558753
+          state: REGISTERED
+          nssai: 1-333333
+          nr_cell_id: 52
+      properties:
+        control_info:
+          $ref: "#/components/schemas/UeControlInfo"
+      required:
+      - control_info
+      type: object
+    UePduSession:
+      additionalProperties: false
+      description: |
+        UE PDU session, read from the SMF via `DSP PDUSESSION`.
+      example:
+        imsi: "999080100001150"
+        dnn: test
+        five_qi: "6"
+        snssai: 1/333333
+        ssc_mode: "1"
+        user_ip_type: IPv4
+        user_ip: 10.16.9.19
+      properties:
+        imsi:
+          type: string
+        dnn:
+          description: APN or DNN.
+          type: string
+        five_qi:
+          description: QCI or 5QI.
+          type: string
+        qos_flow_arp_priority_level:
+          type: string
+        snssai:
+          description: SNssaiSst/SNssaiSd.
+          type: string
+        qos_flow_5qi_priority_level:
+          type: string
+        ambr_uplink:
+          description: Negotiated session AMBR uplink (detailed view only).
+          type: string
+        ambr_downlink:
+          description: Negotiated session AMBR downlink (detailed view only).
+          type: string
+        pdu_session_type:
+          type: string
+        ssc_mode:
+          type: string
+        user_ip_type:
+          type: string
+        user_ip:
+          type: string
+      type: object
+    UePduSessionResponse:
+      additionalProperties: false
+      description: Response envelope containing one `UePduSession`.
+      example:
+        pdu_session:
+          imsi: "999080100001150"
+          dnn: test
+          five_qi: "6"
+          snssai: 1/333333
+          ssc_mode: "1"
+          user_ip_type: IPv4
+          user_ip: 10.16.9.19
+      properties:
+        pdu_session:
+          $ref: "#/components/schemas/UePduSession"
+      required:
+      - pdu_session
+      type: object
+    BbuListResponse:
+      additionalProperties: false
+      description: Response envelope containing all known BBUs.
+      example:
+        bbus:
+        - bbu_id: bbu-99904
+          location: muttley
+          plmn_id: "99904"
+          ip_address: 10.255.0.1
+          status: Available
+        - bbu_id: bbu-99903
+          location: penelope
+          plmn_id: "99903"
+          ip_address: 10.255.0.1
+          status: Available
+        - bbu_id: aveiro-seaport
+          location: aveiro-seaport
+          plmn_id: "99908"
+          ip_address: 10.255.0.1
+          status: Unavailable
+      properties:
+        bbus:
+          example:
+          - bbu_id: bbu-99904
+            location: muttley
+            plmn_id: "99904"
+            ip_address: 10.255.0.1
+            status: Available
+          - bbu_id: bbu-99903
+            location: penelope
+            plmn_id: "99903"
+            ip_address: 10.255.0.1
+            status: Available
+          - bbu_id: aveiro-seaport
+            location: aveiro-seaport
+            plmn_id: "99908"
+            ip_address: 10.255.0.1
+            status: Unavailable
+          items:
+            $ref: "#/components/schemas/Bbu"
+          type: array
+      required:
+      - bbus
+      type: object
+    CellUpdateRequest:
+      additionalProperties: false
+      anyOf: []
+      description: |
+        Cell update payload.
+
+        Include `operation`, `properties`, or both.
+      example:
+        operation: activate
+        properties:
+          mimo: true
+          max_transmit_power: 242
+      nullable: true
+      properties:
+        operation:
+          description: Allowed state operation for a cell.
+          enum:
+          - activate
+          - deactivate
+          example: activate
+          type: string
+        properties:
+          $ref: "#/components/schemas/CellProperties"
+      type: object
+    CellBulkUpdateRequest:
+      additionalProperties: false
+      anyOf: []
+      description: Bulk update payload for multiple cells in a BBU.
+      example:
+        cell_ids:
+        - 151
+        - 152
+        operation: activate
+        properties:
+          mimo: true
+          max_transmit_power: 242
+      nullable: true
+      properties:
+        cell_ids:
+          example:
+          - 151
+          - 152
+          items:
+            type: integer
+          minItems: 1
+          type: array
+        operation:
+          description: Allowed state operation for each selected cell.
+          enum:
+          - activate
+          - deactivate
+          example: activate
+          type: string
+        properties:
+          $ref: "#/components/schemas/CellProperties"
+      required:
+      - cell_ids
+      type: object
+    CellStatusResponse:
+      additionalProperties: false
+      description: Response envelope containing one cell status.
+      example:
+        cell:
+          nr_cell_id: 151
+          frequency_band: n78
+          duplex_mode: TDD
+          user_label: muttley
+          activation_state: Activated
+          max_transmit_power: 242
+      properties:
+        cell:
+          $ref: "#/components/schemas/CellStatus"
+      required:
+      - cell
+      type: object
+    CellStatusListResponse:
+      additionalProperties: false
+      description: Response envelope containing cell statuses for one BBU.
+      example:
+        cells:
+        - nr_cell_id: 151
+          frequency_band: n78
+          duplex_mode: TDD
+          user_label: muttley
+          activation_state: Activated
+          max_transmit_power: 242
+        - nr_cell_id: 152
+          frequency_band: n78
+          duplex_mode: TDD
+          user_label: penelope
+          activation_state: Deactivated
+          max_transmit_power: 70
+        - nr_cell_id: 153
+          frequency_band: n78
+          duplex_mode: TDD
+          user_label: it
+          activation_state: Activated
+          max_transmit_power: 180
+      properties:
+        cells:
+          example:
+          - nr_cell_id: 151
+            frequency_band: n78
+            duplex_mode: TDD
+            user_label: muttley
+            activation_state: Activated
+            max_transmit_power: 242
+          - nr_cell_id: 152
+            frequency_band: n78
+            duplex_mode: TDD
+            user_label: penelope
+            activation_state: Deactivated
+            max_transmit_power: 70
+          - nr_cell_id: 153
+            frequency_band: n78
+            duplex_mode: TDD
+            user_label: it
+            activation_state: Activated
+            max_transmit_power: 180
+          items:
+            $ref: "#/components/schemas/CellStatus"
+          type: array
+      required:
+      - cells
+      type: object
+  securitySchemes:
+    capif_bearer:
+      bearerFormat: JWT
+      description: JWT bearer token provided by CAPIF.
+      scheme: bearer
+      type: http
